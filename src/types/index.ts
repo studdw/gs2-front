@@ -201,6 +201,27 @@ export interface PontoCritico {
   distanciaEquipamentoMetros: number
 }
 
+/** Assuntos aceitos pelo POST /contatos */
+export type AssuntoContato = 'DUVIDA' | 'PROBLEMA_SITE' | 'PARCERIA' | 'IMPRENSA' | 'OUTRO'
+
+export type StatusContato = 'ABERTO' | 'RESPONDIDO' | 'ARQUIVADO'
+
+/** Corpo do POST /contatos */
+export interface ContatoEnvio {
+  nome: string
+  email: string
+  assunto: AssuntoContato
+  mensagem: string
+}
+
+/** Mensagem de contato devolvida pela API */
+export interface Contato extends ContatoEnvio {
+  id: number
+  usuarioId: number | null
+  status: StatusContato
+  dataEnvio: string
+}
+
 /** Formato padrão de erro devolvido pela API Java (ErroResponseDto) */
 export interface ErroApi {
   erro: string

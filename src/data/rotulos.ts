@@ -1,8 +1,8 @@
 import type { Gravidade, PerfilMobilidade, StatusRelato, TipoObstaculo, TipoVoto } from '../types'
 
-// Textos exibidos na interface para cada valor vindo da API.
-// Rótulos de perfil em 1ª pessoa, como definido no UX Writing do projeto.
+/* textos que aparecem na tela pra cada valor que vem da API */
 
+/** perfis de mobilidade com o rótulo em 1ª pessoa (do UX Writing), nome curto e emoji */
 export const PERFIS: { valor: PerfilMobilidade; rotulo: string; curto: string; emoji: string }[] = [
   { valor: 'CADEIRANTE', rotulo: 'Uso cadeira de rodas', curto: 'Cadeira de rodas', emoji: '🧑‍🦽' },
   { valor: 'IDOSO', rotulo: 'Sou uma pessoa idosa', curto: 'Pessoa idosa', emoji: '🧓' },
@@ -12,10 +12,12 @@ export const PERFIS: { valor: PerfilMobilidade; rotulo: string; curto: string; e
   { valor: 'MULETA_ANDADOR', rotulo: 'Uso muleta ou andador', curto: 'Muleta ou andador', emoji: '🩼' },
 ]
 
+/** devolve o nome curto do perfil, ex.: "Cadeira de rodas" */
 export function rotuloPerfil(perfil: PerfilMobilidade): string {
   return PERFIS.find((item) => item.valor === perfil)?.curto ?? perfil
 }
 
+/** tradução do tipo de obstáculo pro texto da tela */
 export const TIPOS: Record<TipoObstaculo, string> = {
   BURACO: 'Buraco',
   DEGRAU: 'Degrau',
@@ -27,6 +29,7 @@ export const TIPOS: Record<TipoObstaculo, string> = {
   TRAVESSIA_INSEGURA: 'Travessia sem semáforo sonoro',
 }
 
+/** tradução da gravidade */
 export const GRAVIDADES: Record<Gravidade, string> = {
   BAIXA: 'Baixa',
   MEDIA: 'Média',
@@ -34,7 +37,7 @@ export const GRAVIDADES: Record<Gravidade, string> = {
   CRITICA: 'Crítica',
 }
 
-/** As mesmas 4 cores de gravidade em todo o site (consistência - heurística H4). */
+/** as mesmas 4 cores de gravidade no site inteiro, pra manter a consistência (heurística H4) */
 export const CORES_GRAVIDADE: Record<Gravidade, { classe: string; hex: string }> = {
   BAIXA: { classe: 'bg-sky-100 text-sky-900 ring-sky-300', hex: '#0284c7' },
   MEDIA: { classe: 'bg-amber-100 text-amber-900 ring-amber-300', hex: '#d97706' },
@@ -42,6 +45,7 @@ export const CORES_GRAVIDADE: Record<Gravidade, { classe: string; hex: string }>
   CRITICA: { classe: 'bg-red-100 text-red-900 ring-red-300', hex: '#dc2626' },
 }
 
+/** texto e cor de cada status do relato */
 export const STATUS: Record<StatusRelato, { rotulo: string; classe: string }> = {
   EM_MODERACAO: { rotulo: 'Em moderação', classe: 'bg-slate-100 text-slate-800 ring-slate-300' },
   PUBLICADO: { rotulo: 'Publicado', classe: 'bg-teal-50 text-teal-900 ring-teal-300' },
@@ -52,19 +56,22 @@ export const STATUS: Record<StatusRelato, { rotulo: string; classe: string }> = 
   EXPIRADO: { rotulo: 'Expirado', classe: 'bg-slate-100 text-slate-600 ring-slate-300' },
 }
 
+/** tradução do tipo de voto */
 export const VOTOS: Record<TipoVoto, string> = {
   AINDA_EXISTE: 'Ainda existe',
   FOI_RESOLVIDO: 'Foi resolvido',
   NAO_ENCONTREI: 'Não encontrei',
 }
 
+/** formata a data no padrão brasileiro (dd/mm/aaaa) */
 export function formatarData(iso?: string): string {
   if (!iso) return '-'
-  // Datas sem hora (AAAA-MM-DD) são tratadas como data local, sem conversão de fuso
+  /* data sem hora (AAAA-MM-DD) é tratada como data local, pro fuso não mudar o dia */
   const data = iso.length === 10 ? new Date(`${iso}T00:00:00`) : new Date(iso)
   return data.toLocaleDateString('pt-BR')
 }
 
+/** mostra a distância em m ou km, ex.: "350 m" ou "1,2 km" */
 export function formatarDistancia(metros: number): string {
   return metros >= 1000 ? `${(metros / 1000).toFixed(1).replace('.', ',')} km` : `${Math.round(metros)} m`
 }

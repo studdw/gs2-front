@@ -13,17 +13,19 @@ import { buscarIndicadores, buscarRanking } from '../services/painelService'
 import { alterarStatusRelato, listarRelatos } from '../services/relatoService'
 import type { Gravidade, Indicadores, PontoCritico, Relato, TipoObstaculo } from '../types'
 
+/** cor da nota de impacto: quanto maior o impacto, mais vermelho */
 function tomDoImpacto(indice: number): 'bom' | 'medio' | 'ruim' {
   if (indice >= 70) return 'ruim'
   return indice >= 45 ? 'medio' : 'bom'
 }
 
+/** texto da nota de impacto: alto, médio ou baixo */
 function rotuloDoImpacto(indice: number): string {
   if (indice >= 70) return 'Impacto alto'
   return indice >= 45 ? 'Impacto médio' : 'Impacto baixo'
 }
 
-/** Números gerais e por bairro: GET /painel/indicadores (HU13). */
+/** números gerais, por bairro e por tipo (HU13), vindos do GET /painel/indicadores */
 function IndicadoresGerais({ dados }: { dados: Indicadores }) {
   const cartoes = [
     { rotulo: 'Relatos ativos', valor: String(dados.ativos) },
@@ -37,6 +39,7 @@ function IndicadoresGerais({ dados }: { dados: Indicadores }) {
           : '-',
     },
   ]
+  /* maior total, usado pra calcular a largura de cada barrinha */
   const maiorTotal = Math.max(1, ...dados.porTipo.map((item) => item.total))
 
   return (
@@ -53,7 +56,7 @@ function IndicadoresGerais({ dados }: { dados: Indicadores }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Cartao>
           <h3 className="text-base font-semibold text-slate-900">Por bairro</h3>
-          {/* A tabela rola dentro do cartão em telas estreitas, sem empurrar a página */}
+          {/* a tabela rola dentro do cartão em tela estreita, sem empurrar a página */}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[26rem] text-left text-sm">
               <thead>
@@ -108,8 +111,9 @@ function IndicadoresGerais({ dados }: { dados: Indicadores }) {
   )
 }
 
-/** Um ponto do ranking, com a composição do Índice de Impacto (RN19). */
+/** um item do ranking, com a composição do Índice de Impacto (RN19) */
 function ItemDoRanking({ ponto }: { ponto: PontoCritico }) {
+  /* os 4 fatores do índice e o peso de cada um */
   const fatores = [
     { rotulo: 'Gravidade', peso: '40%', valor: ponto.composicao.gravidade },
     { rotulo: 'Confirmações', peso: '25%', valor: ponto.composicao.confirmacoes },
@@ -168,12 +172,14 @@ function ItemDoRanking({ ponto }: { ponto: PontoCritico }) {
   )
 }
 
-/** Fila de moderação do gestor: relatos com baixa confiança aguardando aprovação (RN11). */
+/** fila de moderação do gestor: relatos com baixa confiança esperando aprovação (RN11) */
 function FilaDeModeracao({ aoModerar }: { aoModerar: () => void }) {
+  /* busca os relatos em moderação e guarda qual está sendo moderado agora */
   const fila = useRequisicao((sinal) => listarRelatos({ status: 'EM_MODERACAO' }, sinal), [])
   const [emAndamento, setEmAndamento] = useState<number | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  /** aprova (publica) ou rejeita um relato da fila */
   async function moderar(relato: Relato, aprovar: boolean) {
     setEmAndamento(relato.id)
     setErro(null)
@@ -224,16 +230,19 @@ function FilaDeModeracao({ aoModerar }: { aoModerar: () => void }) {
   )
 }
 
-/** Painel público (HU13) com ranking de pontos críticos por Índice de Impacto (HU11). */
+/** página do painel público (HU13) com o ranking de pontos críticos pelo Índice de Impacto (HU11) */
 export function Painel() {
+  /* usuário logado e os filtros do ranking (bairro, tipo e gravidade) */
   const { usuario } = useAuth()
   const [bairro, setBairro] = useState('')
   const [tipo, setTipo] = useState<TipoObstaculo | ''>('')
   const [gravidade, setGravidade] = useState<Gravidade | ''>('')
 
+  /* indicadores e ranking; o ranking busca de novo sempre que um filtro muda */
   const indicadores = useRequisicao((sinal) => buscarIndicadores(sinal), [])
   const ranking = useRequisicao((sinal) => buscarRanking({ bairro, tipo, gravidade }, sinal), [bairro, tipo, gravidade])
 
+  /** atualiza indicadores e ranking depois que o gestor modera um relato */
   function recarregarTudo() {
     indicadores.recarregar()
     ranking.recarregar()
@@ -246,6 +255,7 @@ export function Painel() {
         sem cadastro.
       </TituloPagina>
 
+      {/* fila de moderação, só pra gestor */}
       {usuario?.papel === 'GESTOR' && <FilaDeModeracao aoModerar={recarregarTudo} />}
 
       <section aria-labelledby="titulo-indicadores">
@@ -274,6 +284,7 @@ export function Painel() {
           </Link>
         </p>
 
+        {/* filtros do ranking; a lista de bairros vem dos próprios indicadores */}
         <div className="mb-4 grid gap-3 md:grid-cols-3">
           <Selecao rotulo="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)}>
             <option value="">Todos os bairros</option>

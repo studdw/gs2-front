@@ -1,12 +1,12 @@
 import type { Gravidade, Indicadores, PontoCritico, TipoObstaculo } from '../types'
 import { montarConsulta, requisitar } from './api'
 
-/** GET /painel/indicadores */
+/** números gerais do painel público (GET /painel/indicadores) */
 export function buscarIndicadores(sinal?: AbortSignal): Promise<Indicadores> {
   return requisitar<Indicadores>('/painel/indicadores', { sinal })
 }
 
-/** GET /painel/ranking (com filtros opcionais) */
+/** ranking de pontos críticos, com filtros opcionais de bairro, tipo e gravidade (GET /painel/ranking) */
 export function buscarRanking(
   filtros: { bairro?: string; tipo?: TipoObstaculo | ''; gravidade?: Gravidade | '' },
   sinal?: AbortSignal,

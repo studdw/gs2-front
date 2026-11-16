@@ -12,15 +12,20 @@ import { cadastrarUsuario } from '../services/usuarioService'
 import type { PerfilMobilidade } from '../types'
 import { emailValido, errosDaApi, temErros, type Erros } from '../utils/validacao'
 
+/** campos do cadastro que podem ter erro */
 type CamposCadastro = 'nome' | 'email' | 'senha' | 'confirmacao' | 'consentimento'
 
+/** página de criar conta (HU01); depois do cadastro já faz o login e volta pra onde a pessoa estava */
 export function Cadastro() {
+  /* login do contexto, perfil escolhido como visitante e navegação */
   const { usuario, entrar } = useAuth()
   const { perfil: perfilVisitante } = usePreferencias()
   const navegar = useNavigate()
   const local = useLocation()
+  /* pra onde voltar depois do cadastro: a página que pediu login ou a "minha conta" */
   const voltarPara = (local.state as { voltarPara?: string } | null)?.voltarPara ?? '/minha-conta'
 
+  /* hook que guarda o que a pessoa digita, os erros e se está enviando */
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -31,10 +36,12 @@ export function Cadastro() {
   const [erroApi, setErroApi] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
+  /* se já está logado não faz sentido cadastrar, então manda direto pro destino */
   if (usuario && !enviando) {
     return <Navigate to={voltarPara} replace />
   }
 
+  /** confere os campos antes de enviar e monta as mensagens de erro */
   function validar(): Erros<CamposCadastro> {
     const novos: Erros<CamposCadastro> = {}
     if (nome.trim().length < 3) novos.nome = 'Informe o seu nome (pelo menos 3 letras).'
@@ -45,6 +52,7 @@ export function Cadastro() {
     return novos
   }
 
+  /** manda o cadastro pra API, faz login e redireciona; se a API recusar algum campo, o erro aparece nele */
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
     const novos = validar()
@@ -118,6 +126,7 @@ export function Cadastro() {
             <p className="mt-2 text-sm text-slate-600">Opcional. Você pode escolher ou trocar depois, em 1 toque.</p>
           </div>
 
+          {/* o consentimento só aparece se escolheu um perfil, porque é dado sensível (LGPD) */}
           {perfil && (
             <div>
               <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-slate-700">

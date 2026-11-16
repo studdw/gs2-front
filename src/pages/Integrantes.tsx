@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { TituloPagina } from '../components/Layout'
 import { INTEGRANTES, iniciais } from '../data/integrantes'
 
+/** página com os cartões de todos os integrantes */
 export function Integrantes() {
   return (
     <div>
@@ -23,7 +24,7 @@ export function Integrantes() {
               RM {integrante.rm} - Turma {integrante.turma}
             </p>
             <p className="mt-2 text-sm text-slate-700">{integrante.papel}</p>
-            {/* Rota com parâmetro: /integrantes/:rm */}
+            {/* o link usa a rota com parâmetro /integrantes/:rm */}
             <Link
               to={`/integrantes/${integrante.rm}`}
               className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-marca-800 hover:underline"

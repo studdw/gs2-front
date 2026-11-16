@@ -3,12 +3,14 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Botao, LinkBotao } from './Botao'
 
+/** links das páginas da solução (menu e rodapé) */
 const LINKS_SOLUCAO = [
   { para: '/rotas', texto: 'Buscar rota' },
   { para: '/relatos', texto: 'Relatos' },
   { para: '/painel', texto: 'Painel público' },
 ]
 
+/** links das páginas institucionais (menu e rodapé) */
 const LINKS_INSTITUCIONAIS = [
   { para: '/sobre', texto: 'Sobre' },
   { para: '/integrantes', texto: 'Integrantes' },
@@ -16,12 +18,14 @@ const LINKS_INSTITUCIONAIS = [
   { para: '/contato', texto: 'Contato' },
 ]
 
+/** destaca no menu a página em que a pessoa está */
 function estiloLink({ isActive }: { isActive: boolean }): string {
   return `flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors ${
     isActive ? 'bg-marca-50 text-marca-900' : 'text-slate-700 hover:bg-slate-100'
   }`
 }
 
+/** logo + nome, sempre levando pra home */
 function Logo() {
   return (
     <Link to="/" className="flex min-h-11 items-center gap-2 text-lg font-bold text-marca-900">
@@ -31,16 +35,19 @@ function Logo() {
   )
 }
 
+/** cabeçalho fixo no topo: menu de desktop, menu de celular e entrar/sair */
 function Cabecalho() {
   const { usuario, sair } = useAuth()
+  /* hook que controla se o menu do celular está aberto ou fechado */
   const [menuAberto, setMenuAberto] = useState(false)
   const local = useLocation()
 
-  // Fecha o menu do celular sempre que a página muda
+  /* useEffect que fecha o menu do celular toda vez que a página muda */
   useEffect(() => {
     setMenuAberto(false)
   }, [local.pathname])
 
+  /* junta os dois grupos de links num menu só */
   const links = [...LINKS_SOLUCAO, ...LINKS_INSTITUCIONAIS]
 
   return (
@@ -48,7 +55,7 @@ function Cabecalho() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2">
         <Logo />
 
-        {/* Menu do desktop */}
+        {/* menu do desktop (some em telas menores) */}
         <nav aria-label="Principal" className="hidden items-center gap-0.5 xl:flex">
           {links.map((link) => (
             <NavLink key={link.para} to={link.para} className={estiloLink}>
@@ -57,6 +64,7 @@ function Cabecalho() {
           ))}
         </nav>
 
+        {/* logado vê "Olá, nome" e Sair; visitante vê Entrar e Criar conta */}
         <div className="hidden items-center gap-2 xl:flex">
           {usuario ? (
             <>
@@ -77,7 +85,7 @@ function Cabecalho() {
           )}
         </div>
 
-        {/* Botão do menu no celular e no tablet */}
+        {/* botão "hambúrguer" do celular e do tablet */}
         <button
           type="button"
           className="flex size-11 items-center justify-center rounded-lg text-slate-800 hover:bg-slate-100 xl:hidden"
@@ -92,6 +100,7 @@ function Cabecalho() {
         </button>
       </div>
 
+      {/* menu do celular, só aparece quando está aberto */}
       {menuAberto && (
         <nav id="menu-movel" aria-label="Principal" className="border-t border-slate-200 bg-white px-4 py-3 xl:hidden">
           <ul className="grid gap-1 sm:grid-cols-2">
@@ -132,6 +141,7 @@ function Cabecalho() {
   )
 }
 
+/** rodapé com a descrição do projeto e os links */
 function Rodape() {
   return (
     <footer className="mt-16 border-t border-slate-200 bg-white">
@@ -175,17 +185,18 @@ function Rodape() {
   )
 }
 
-/** Estrutura comum a todas as páginas: link para pular ao conteúdo, cabeçalho, conteúdo e rodapé. */
+/** esqueleto de todas as páginas: link de pular pro conteúdo, cabeçalho, conteúdo e rodapé */
 export function Layout() {
   const local = useLocation()
 
-  // Ao trocar de página, volta ao topo
+  /* sempre que troca de página, volta a tela pro topo */
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [local.pathname])
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* link "pular para o conteúdo", só aparece quando navega pelo teclado (acessibilidade) */}
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-marca-900 focus:shadow"
@@ -194,6 +205,7 @@ export function Layout() {
       </a>
       <Cabecalho />
       <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        {/* o Outlet é onde o React Router desenha a página atual */}
         <Outlet />
       </main>
       <Rodape />
@@ -201,7 +213,7 @@ export function Layout() {
   )
 }
 
-/** Título e subtítulo padrão das páginas. */
+/** título e subtítulo padrão das páginas */
 export function TituloPagina({ titulo, children }: { titulo: string; children?: ReactNode }) {
   return (
     <div className="mb-6">
@@ -211,7 +223,7 @@ export function TituloPagina({ titulo, children }: { titulo: string; children?: 
   )
 }
 
-/** Cartão branco usado para agrupar conteúdo. */
+/** cartão branco pra agrupar conteúdo */
 export function Cartao({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <section className={`min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>{children}</section>
 }

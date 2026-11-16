@@ -4,7 +4,7 @@ const TAMANHO_MAXIMO = 1_000_000 // caracteres da data URL (~750 KB de imagem)
 /**
  * Reduz e comprime a foto no navegador antes de enviar (RNF09).
  * Redesenhar a imagem em um canvas também descarta os metadados EXIF (como o GPS da câmera).
- * Devolve a imagem em data URL (JPEG).
+ * Devolve a imagem em JPEG.
  */
 export async function comprimirImagem(arquivo: File): Promise<string> {
   if (!arquivo.type.startsWith('image/')) {
@@ -22,7 +22,7 @@ export async function comprimirImagem(arquivo: File): Promise<string> {
   }
   contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height)
 
-  // Tenta qualidades cada vez menores até caber no limite
+  // vai reduzindo a qualidade até caber no limite
   for (const qualidade of [0.75, 0.6, 0.45, 0.3]) {
     const dataUrl = canvas.toDataURL('image/jpeg', qualidade)
     if (dataUrl.length <= TAMANHO_MAXIMO) {

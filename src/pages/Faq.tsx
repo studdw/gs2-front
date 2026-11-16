@@ -1,5 +1,6 @@
 import { TituloPagina } from '../components/Layout'
 
+/** perguntas e respostas do FAQ */
 const PERGUNTAS = [
   {
     pergunta: 'Preciso criar uma conta para usar?',
@@ -47,6 +48,7 @@ const PERGUNTAS = [
   },
 ]
 
+/** página de perguntas frequentes */
 export function Faq() {
   return (
     <div className="mx-auto max-w-3xl">
@@ -54,7 +56,7 @@ export function Faq() {
 
       <div className="space-y-3">
         {PERGUNTAS.map((item) => (
-          // <details> já é acessível por teclado e leitor de tela, sem precisar de JavaScript
+          /* o <details> já abre e fecha sozinho e é acessível por teclado e leitor de tela, sem precisar de JavaScript */
           <details key={item.pergunta} className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
             <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 text-base font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
               {item.pergunta}

@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { Botao } from './Botao'
 
+/** tipos de mensagem possíveis */
 type TipoMensagem = 'sucesso' | 'erro' | 'aviso' | 'info'
 
+/** cor e ícone de cada tipo */
 const ESTILOS: Record<TipoMensagem, { classe: string; icone: string }> = {
   sucesso: { classe: 'border-emerald-300 bg-emerald-50 text-emerald-900', icone: '✓' },
   erro: { classe: 'border-red-300 bg-red-50 text-red-900', icone: '!' },
@@ -10,7 +12,7 @@ const ESTILOS: Record<TipoMensagem, { classe: string; icone: string }> = {
   info: { classe: 'border-sky-300 bg-sky-50 text-sky-900', icone: 'i' },
 }
 
-/** Caixa de mensagem (sucesso, erro, aviso ou informação). Erros são anunciados por leitores de tela. */
+/** caixa de mensagem (sucesso, erro, aviso ou info); os erros usam role="alert" e o leitor de tela anuncia na hora */
 export function Mensagem({ tipo, titulo, children }: { tipo: TipoMensagem; titulo?: string; children: ReactNode }) {
   const estilo = ESTILOS[tipo]
   return (
@@ -32,7 +34,7 @@ export function Mensagem({ tipo, titulo, children }: { tipo: TipoMensagem; titul
   )
 }
 
-/** Indicador de carregamento com texto. */
+/** aviso de carregando, com rodinha e texto */
 export function Carregando({ texto = 'Carregando...' }: { texto?: string }) {
   return (
     <div role="status" className="flex items-center justify-center gap-3 py-10 text-slate-600">
@@ -42,7 +44,7 @@ export function Carregando({ texto = 'Carregando...' }: { texto?: string }) {
   )
 }
 
-/** Estado de erro de uma busca na API, com botão para tentar de novo. */
+/** aparece quando a busca na API falha, com o botão de tentar de novo */
 export function ErroCarregamento({ mensagem, aoTentarDeNovo }: { mensagem: string; aoTentarDeNovo: () => void }) {
   return (
     <div className="space-y-3">
@@ -56,7 +58,7 @@ export function ErroCarregamento({ mensagem, aoTentarDeNovo }: { mensagem: strin
   )
 }
 
-/** Estado vazio: explica que não há dados e convida para uma ação. */
+/** estado vazio: avisa que não tem nada ali e sugere uma ação */
 export function EstadoVazio({ titulo, children, acao }: { titulo: string; children?: ReactNode; acao?: ReactNode }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">

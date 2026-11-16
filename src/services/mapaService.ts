@@ -1,24 +1,21 @@
 import type { Coordenada, LocalEncontrado, RotaCandidata } from '../types'
 
-/*
- * Serviços públicos e gratuitos do OpenStreetMap, usados como COMPLEMENTO da API Java:
- *  - Nominatim: transforma endereço em coordenada (e o contrário).
- *  - OSRM (perfil "a pé", servidor da comunidade OSM alemã): calcula o trajeto pelas ruas.
- * Eles só desenham o caminho. Quem decide se a rota é acessível é a API Java (/rotas/avaliacoes).
- */
+/* aqui usamos serviços gratuitos do OpenStreetMap como complemento da API Java: o Nominatim transforma endereço em coordenada (e o contrário) e o OSRM calcula o trajeto a pé pelas ruas; eles só desenham o caminho, quem decide se a rota é acessível é a API Java (/rotas/avaliacoes) */
 
+/** endereços dos dois serviços de mapa (Nominatim e OSRM a pé) */
 const NOMINATIM = 'https://nominatim.openstreetmap.org'
 const OSRM_A_PE = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot'
 
-/** Área de cobertura: município de São Paulo (oeste, norte, leste, sul). */
+/** limita a busca de endereços ao município de São Paulo (oeste, norte, leste, sul) */
 const CAIXA_SP = '-46.83,-23.35,-46.36,-24.01'
 
-/** Centro padrão do mapa: região da Vila Mariana / Paraíso. */
+/** centro padrão do mapa: Vila Mariana / Paraíso */
 export const CENTRO_PADRAO: Coordenada = [-23.5745, -46.6405]
 
-/** Erro de um serviço de mapas, com mensagem pronta para a tela. */
+/** erro dos serviços de mapa, com mensagem pronta pra tela */
 export class MapaError extends Error {}
 
+/** o que o Nominatim devolve (só os campos que usamos) */
 interface RespostaNominatim {
   display_name: string
   lat: string
@@ -26,10 +23,12 @@ interface RespostaNominatim {
   address?: Record<string, string>
 }
 
+/** acha o bairro no endereço do Nominatim, que pode vir com nomes diferentes */
 function extrairBairro(endereco?: Record<string, string>): string | undefined {
   return endereco?.suburb ?? endereco?.neighbourhood ?? endereco?.city_district ?? endereco?.quarter
 }
 
+/** nome curto do lugar, tipo "Rua X, 123 - Bairro", em vez do endereço gigante */
 function resumirNome(item: RespostaNominatim): string {
   const e = item.address
   if (e?.road) {
@@ -37,11 +36,11 @@ function resumirNome(item: RespostaNominatim): string {
     const bairro = extrairBairro(e)
     return `${e.road}${numero}${bairro ? ` - ${bairro}` : ''}`
   }
-  // Sem rua: usa as duas primeiras partes do nome completo
+  /* sem rua, usa só as duas primeiras partes do nome completo */
   return item.display_name.split(',').slice(0, 2).join(',')
 }
 
-/** Busca um endereço dentro de São Paulo. Devolve lista vazia quando não encontra. */
+/** busca um endereço digitado dentro de SP; lista vazia se não achar */
 export async function buscarEndereco(texto: string, sinal?: AbortSignal): Promise<LocalEncontrado[]> {
   const consulta = new URLSearchParams({
     format: 'jsonv2',
@@ -72,7 +71,7 @@ export async function buscarEndereco(texto: string, sinal?: AbortSignal): Promis
   }))
 }
 
-/** Descobre rua e bairro de um ponto do mapa. Devolve null se o serviço não responder. */
+/** descobre rua e bairro de um ponto clicado no mapa; null se o serviço não responder */
 export async function buscarEnderecoDoPonto(
   latitude: number,
   longitude: number,
@@ -101,13 +100,15 @@ export async function buscarEnderecoDoPonto(
   }
 }
 
+/** o que o OSRM devolve: rotas com distância e a linha do caminho */
 interface RespostaOsrm {
   code: string
   routes?: { distance: number; geometry: { coordinates: [number, number][] } }[]
 }
 
+/** pede pro OSRM os trajetos a pé passando pelas paradas */
 async function consultarOsrm(paradas: Coordenada[], alternativas: boolean, sinal?: AbortSignal): Promise<RotaCandidata[]> {
-  // O OSRM usa a ordem longitude,latitude
+  /* atenção: o OSRM usa longitude,latitude, ao contrário do resto do projeto */
   const caminho = paradas.map(([lat, lng]) => `${lng},${lat}`).join(';')
   const url = `${OSRM_A_PE}/${caminho}?overview=full&geometries=geojson&alternatives=${alternativas}`
   const resposta = await fetch(url, { signal: sinal })
@@ -120,7 +121,7 @@ async function consultarOsrm(paradas: Coordenada[], alternativas: boolean, sinal
   }))
 }
 
-/** Mantém no máximo ~1500 pontos por rota para a requisição à API não ficar pesada. */
+/** deixa no máximo ~1500 pontos por rota, pra requisição não ficar pesada */
 function reduzirPontos(pontos: Coordenada[], maximo = 1500): Coordenada[] {
   if (pontos.length <= maximo) return pontos
   const passo = Math.ceil(pontos.length / maximo)
@@ -129,18 +130,14 @@ function reduzirPontos(pontos: Coordenada[], maximo = 1500): Coordenada[] {
   return reduzidos
 }
 
-/** Distância aproximada em metros entre dois pontos próximos. */
+/** distância aproximada em metros entre dois pontos próximos */
 export function distanciaMetros(a: Coordenada, b: Coordenada): number {
   const dLat = (b[0] - a[0]) * 111_320
   const dLng = (b[1] - a[1]) * 111_320 * Math.cos((a[0] * Math.PI) / 180)
   return Math.hypot(dLat, dLng)
 }
 
-/**
- * Busca até 3 trajetos a pé diferentes entre origem e destino.
- * Além das alternativas do próprio OSRM, tenta dois desvios (um para cada lado do caminho direto),
- * para que exista uma opção que contorne os obstáculos relatados.
- */
+/** serve para buscar até 3 trajetos a pé; além das alternativas do OSRM, tenta dois desvios (um pra cada lado do caminho direto) pra ter uma opção que contorne os obstáculos */
 export async function buscarTrajetos(origem: Coordenada, destino: Coordenada, sinal?: AbortSignal): Promise<RotaCandidata[]> {
   let rotas: RotaCandidata[]
   try {
@@ -153,11 +150,12 @@ export async function buscarTrajetos(origem: Coordenada, destino: Coordenada, si
     throw new MapaError('Não encontramos um caminho a pé entre esses dois pontos.')
   }
 
+  /* se o OSRM trouxe menos de 3 rotas, forçamos desvios passando por um ponto ao lado do caminho */
   if (rotas.length < 3) {
     const reta = distanciaMetros(origem, destino)
     const desvio = Math.min(400, Math.max(120, reta * 0.2))
     const meio: Coordenada = [(origem[0] + destino[0]) / 2, (origem[1] + destino[1]) / 2]
-    // Vetor perpendicular ao caminho direto, convertido de metros para graus
+    /* vetor perpendicular ao caminho direto, convertido de metros pra graus */
     const dLat = destino[0] - origem[0]
     const dLng = destino[1] - origem[1]
     const tamanho = Math.hypot(dLat, dLng) || 1
@@ -171,6 +169,7 @@ export async function buscarTrajetos(origem: Coordenada, destino: Coordenada, si
     const desvios = await Promise.all(
       lados.map((ponto) => consultarOsrm([origem, ponto, destino], false, sinal).catch(() => [])),
     )
+    /* o desvio só entra se não for repetido nem longo demais (até 80% maior que a mais curta) */
     const maisCurta = Math.min(...rotas.map((rota) => rota.distanciaMetros))
     for (const candidata of desvios.flat()) {
       const repetida = rotas.some((rota) => Math.abs(rota.distanciaMetros - candidata.distanciaMetros) < 25)

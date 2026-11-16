@@ -3,12 +3,14 @@ import { Cartao } from '../components/Layout'
 import { useRequisicao } from '../hooks/useRequisicao'
 import { buscarIndicadores } from '../services/painelService'
 
+/** números do problema com as fontes, usados em "Por que isso importa" */
 const NUMEROS = [
   { valor: '2,02 mi', texto: 'de pessoas idosas (60+) vivem na cidade de São Paulo', fonte: 'Prefeitura de SP, Censo 2022' },
   { valor: '88%', texto: 'das calçadas da capital não têm infraestrutura adequada', fonte: 'Revista de Saúde Pública (USP)' },
   { valor: '33 dias', texto: 'de espera média por serviços de calçada no SP156', fonte: 'Câmara Municipal de SP, 2026' },
 ]
 
+/** passos da seção "Como funciona" */
 const PASSOS = [
   { titulo: 'Escolha seu perfil', texto: 'Cadeira de rodas, andador, carrinho de bebê, baixa visão... a rota se adapta a você.' },
   { titulo: 'Busque a rota', texto: 'Informe origem e destino e compare até 3 caminhos pelo índice de acessibilidade.' },
@@ -17,8 +19,9 @@ const PASSOS = [
   { titulo: 'A cidade prioriza', texto: 'O painel mostra à prefeitura onde a obra ajuda mais gente.' },
 ]
 
-/** Resumo ao vivo, vindo da API Java (GET /painel/indicadores). */
+/** resumo ao vivo que vem da API Java (GET /painel/indicadores) */
 function ResumoDaCidade() {
+  /* busca os indicadores assim que a página abre */
   const { dados, carregando, erro } = useRequisicao((sinal) => buscarIndicadores(sinal), [])
 
   if (carregando) {
@@ -44,10 +47,11 @@ function ResumoDaCidade() {
   )
 }
 
+/** página inicial: apresenta o projeto e leva pras funções principais */
 export function Home() {
   return (
     <div className="space-y-14">
-      {/* Apresentação */}
+      {/* apresentação, com os botões principais e o resumo da comunidade */}
       <section className="grid items-center gap-8 lg:grid-cols-2">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-marca-700">CitizenTech - São Paulo</p>
@@ -77,7 +81,7 @@ export function Home() {
         </Cartao>
       </section>
 
-      {/* O problema */}
+      {/* o problema, com números reais */}
       <section aria-labelledby="titulo-problema">
         <h2 id="titulo-problema" className="text-2xl font-bold text-slate-900">
           Por que isso importa
@@ -93,7 +97,7 @@ export function Home() {
         </div>
       </section>
 
-      {/* Como funciona */}
+      {/* como funciona, em 5 passos */}
       <section aria-labelledby="titulo-como-funciona">
         <h2 id="titulo-como-funciona" className="text-2xl font-bold text-slate-900">
           Como funciona
@@ -111,7 +115,7 @@ export function Home() {
         </ol>
       </section>
 
-      {/* Chamada final */}
+      {/* chamada final pra criar conta */}
       <section className="rounded-3xl bg-marca-800 px-6 py-10 text-center text-white md:px-12">
         <h2 className="text-2xl font-bold">Uma cidade acessível para quem mais precisa é melhor para todo mundo.</h2>
         <p className="mx-auto mt-2 max-w-2xl text-marca-100">

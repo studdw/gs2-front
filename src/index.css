@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Tokens do tema (Tailwind v4): cor da marca e fonte */
+/* tokens do tema do Tailwind v4: a cor da marca e a fonte */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --color-marca-50: #f0fdfa;
@@ -12,6 +12,7 @@
   --color-marca-900: #134e4a;
 }
 
+/* estilos base que valem para a página inteira */
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -21,18 +22,18 @@
     @apply bg-slate-50 text-slate-800 antialiased;
   }
 
-  /* Foco sempre visível para quem navega pelo teclado (WCAG 2.1 AA) */
+  /* foco fica sempre visível para quem navega pelo teclado (WCAG 2.1 AA) */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-marca-700;
   }
 }
 
-/* O mapa do Leaflet usa z-index alto; isto impede que ele passe por cima do menu */
+/* aqui impedimos que o mapa do Leaflet, que usa z-index alto, passe por cima do menu */
 .leaflet-container {
   @apply z-0 font-sans;
 }
 
-/* Marcadores do mapa (criados com L.divIcon no componente Mapa) */
+/* estilos dos marcadores do mapa (criados com L.divIcon no componente Mapa) */
 .marcador-relato {
   @apply flex items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-md;
 }
@@ -41,6 +42,7 @@
   @apply flex items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white shadow-md;
 }
 
+/* desligamos as animações para quem pediu menos movimento no sistema (acessibilidade) */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

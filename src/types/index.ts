@@ -1,5 +1,3 @@
-// Tipos dos dados trocados com a API Java (espelham os DTOs do back-end)
-
 export type Papel = 'CIDADAO' | 'GESTOR'
 
 export type PerfilMobilidade =
@@ -129,7 +127,6 @@ export interface ValidacaoEntrada {
   longitude: number
 }
 
-/** Ponto no mapa: [latitude, longitude] */
 export type Coordenada = [number, number]
 
 export interface RotaCandidata {
@@ -201,12 +198,10 @@ export interface PontoCritico {
   distanciaEquipamentoMetros: number
 }
 
-/** Assuntos aceitos pelo POST /contatos */
 export type AssuntoContato = 'DUVIDA' | 'PROBLEMA_SITE' | 'PARCERIA' | 'IMPRENSA' | 'OUTRO'
 
 export type StatusContato = 'ABERTO' | 'RESPONDIDO' | 'ARQUIVADO'
 
-/** Corpo do POST /contatos */
 export interface ContatoEnvio {
   nome: string
   email: string
@@ -214,7 +209,6 @@ export interface ContatoEnvio {
   mensagem: string
 }
 
-/** Mensagem de contato devolvida pela API */
 export interface Contato extends ContatoEnvio {
   id: number
   usuarioId: number | null
@@ -222,13 +216,11 @@ export interface Contato extends ContatoEnvio {
   dataEnvio: string
 }
 
-/** Formato padrão de erro devolvido pela API Java (ErroResponseDto) */
 export interface ErroApi {
   erro: string
   detalhe: string
 }
 
-/** Endereço encontrado pela busca do mapa (OpenStreetMap) */
 export interface LocalEncontrado {
   nome: string
   latitude: number

@@ -15,12 +15,13 @@ import { buscarEndereco, buscarEnderecoDoPonto, buscarTrajetos, CENTRO_PADRAO, M
 import { avaliarRotas } from '../services/rotaService'
 import type { AvaliacaoRotas, Coordenada, PerfilMobilidade, RotaAvaliada, RotaCandidata } from '../types'
 
-/** Um ponto da busca: o texto digitado e, quando já conhecida, a coordenada. */
+/** um ponto da busca: o texto digitado e, se já souber, a coordenada */
 interface Ponto {
   texto: string
   posicao: Coordenada | null
 }
 
+/** resultado da busca: trajetos, avaliação da API, origem e destino */
 interface Resultado {
   trajetos: RotaCandidata[]
   avaliacao: AvaliacaoRotas
@@ -28,18 +29,22 @@ interface Resultado {
   destino: Coordenada
 }
 
+/** ponto vazio pra começar os campos de origem e destino */
 const PONTO_VAZIO: Ponto = { texto: '', posicao: null }
 
+/** decide a cor da nota: ruim se bloqueada ou abaixo de 60, bom a partir de 80 */
 function tomDoIndice(rota: RotaAvaliada): 'bom' | 'medio' | 'ruim' {
   if (rota.bloqueada || rota.indiceAcessibilidade < 60) return 'ruim'
   return rota.indiceAcessibilidade >= 80 ? 'bom' : 'medio'
 }
 
-/** Busca de rota acessível (UC04 / HU03 e HU04). Não exige conta. */
+/** página de busca de rota acessível (UC04 / HU03 e HU04), funciona sem conta */
 export function BuscarRota() {
+  /* pega o usuário logado e, das preferências, o perfil salvo e o GPS */
   const { usuario } = useAuth()
   const { perfil: perfilSalvo, definirPerfilVisitante, localizacao, usarGps, buscandoGps, erroGps } = usePreferencias()
 
+  /* estados da tela: perfil, origem, destino, erros, carregando, resultado e rota selecionada */
   const [perfil, setPerfil] = useState<PerfilMobilidade | null>(perfilSalvo)
   const [trocandoPerfil, setTrocandoPerfil] = useState(false)
   const [origem, setOrigem] = useState<Ponto>(PONTO_VAZIO)
@@ -50,42 +55,46 @@ export function BuscarRota() {
   const [erroBusca, setErroBusca] = useState<string | null>(null)
   const [resultado, setResultado] = useState<Resultado | null>(null)
   const [selecionada, setSelecionada] = useState(0)
+  /* useRef no título dos resultados, pra levar o foco até ele depois da busca */
   const tituloResultados = useRef<HTMLHeadingElement>(null)
 
+  /** troca o perfil usado na busca */
   function escolherPerfil(novo: PerfilMobilidade) {
     setPerfil(novo)
     setTrocandoPerfil(false)
     setErros((atuais) => ({ ...atuais, perfil: undefined }))
-    // Visitante: guarda a escolha no navegador para as próximas buscas
+    /* se for visitante, a escolha fica salva no navegador pras próximas buscas */
     if (!usuario) definirPerfilVisitante(novo)
   }
 
-  // Quando o GPS responde, usa a posição como origem (UC04, passo 2)
+  /* quando o GPS responde, a posição vira a origem (UC04, passo 2) */
   const posicaoGps = localizacao?.origem === 'gps' ? localizacao.posicao : null
   useEffect(() => {
     if (posicaoGps) setOrigem({ texto: 'Minha localização atual', posicao: posicaoGps })
   }, [posicaoGps])
 
+  /** marca a origem ou o destino clicando no mapa */
   async function marcarNoMapa(posicao: Coordenada) {
     const definir = alvoDoClique === 'origem' ? setOrigem : setDestino
     definir({ texto: 'Ponto marcado no mapa', posicao })
     setErros((atuais) => ({ ...atuais, [alvoDoClique]: undefined }))
-    // Depois de marcar a origem, o próximo clique naturalmente é o destino
+    /* depois de marcar a origem, o próximo clique já vai pro destino */
     if (alvoDoClique === 'origem') setAlvoDoClique('destino')
-    // Troca "Ponto marcado no mapa" pelo nome da rua, se o serviço de mapas responder
+    /* troca "Ponto marcado no mapa" pelo nome da rua, se o serviço de mapas responder */
     const endereco = await buscarEnderecoDoPonto(posicao[0], posicao[1])
     if (endereco?.endereco) {
       definir((atual) => (atual.posicao === posicao ? { ...atual, texto: endereco.endereco } : atual))
     }
   }
 
-  /** Transforma o texto digitado em coordenada. Devolve null se o endereço não existir. */
+  /** transforma o texto digitado em coordenada (null se o endereço não existir) */
   async function resolver(ponto: Ponto): Promise<Coordenada | null> {
     if (ponto.posicao) return ponto.posicao
     const encontrados = await buscarEndereco(ponto.texto)
     return encontrados.length > 0 ? [encontrados[0].latitude, encontrados[0].longitude] : null
   }
 
+  /** função principal da tela: valida o formulário e faz a busca completa quando clica em "Buscar rota" */
   async function buscar(evento?: FormEvent) {
     evento?.preventDefault()
     const novos: typeof erros = {}
@@ -99,7 +108,7 @@ export function BuscarRota() {
     setBuscando(true)
     setResultado(null)
     try {
-      // 1. Endereços -> coordenadas (OpenStreetMap)
+      /* passo 1: endereço vira coordenada (OpenStreetMap) */
       const [posOrigem, posDestino] = await Promise.all([resolver(origem), resolver(destino)])
       const naoEncontrado = 'Não encontramos esse endereço. Confira o número ou escolha um ponto no mapa.'
       if (!posOrigem || !posDestino) {
@@ -109,12 +118,12 @@ export function BuscarRota() {
       setOrigem((atual) => ({ ...atual, posicao: posOrigem }))
       setDestino((atual) => ({ ...atual, posicao: posDestino }))
 
-      // 2. Trajetos a pé candidatos (OpenStreetMap) e 3. índice de acessibilidade (API Java)
+      /* passos 2 e 3: trajetos a pé (OpenStreetMap) e depois o índice de acessibilidade (API Java) */
       const trajetos = await buscarTrajetos(posOrigem, posDestino)
       const avaliacao = await avaliarRotas(perfil, trajetos)
       setResultado({ trajetos, avaliacao, origem: posOrigem, destino: posDestino })
       setSelecionada(avaliacao.rotas[0].posicaoOriginal)
-      // Leva o foco para os resultados (ajuda quem usa leitor de tela)
+      /* leva o foco pros resultados, ajuda quem usa leitor de tela */
       setTimeout(() => tituloResultados.current?.focus(), 0)
     } catch (erro) {
       setErroBusca(erro instanceof MapaError ? erro.message : mensagemDeErro(erro))
@@ -123,9 +132,10 @@ export function BuscarRota() {
     }
   }
 
+  /* a rota que a pessoa escolheu na lista */
   const rotaSelecionada = resultado?.avaliacao.rotas.find((rota) => rota.posicaoOriginal === selecionada)
 
-  // Desenho do mapa: linhas das rotas, pontos A/B e alertas da rota selecionada
+  /* linhas das rotas no mapa, a selecionada fica verde e por cima */
   const linhas = useMemo<LinhaMapa[]>(() => {
     if (!resultado) return []
     return resultado.avaliacao.rotas.map((rota) => ({
@@ -136,6 +146,7 @@ export function BuscarRota() {
     }))
   }, [resultado, selecionada])
 
+  /* marcadores: A (origem), B (destino) e um "!" pra cada alerta da rota selecionada */
   const marcadores = useMemo<MarcadorMapa[]>(() => {
     const lista: MarcadorMapa[] = []
     if (origem.posicao) lista.push({ id: 'origem', posicao: origem.posicao, cor: '#0f766e', texto: 'A', titulo: 'Origem' })
@@ -152,6 +163,7 @@ export function BuscarRota() {
     return lista
   }, [origem.posicao, destino.posicao, rotaSelecionada])
 
+  /* quais pontos o mapa precisa enquadrar */
   const enquadrar = useMemo<Coordenada[] | undefined>(() => {
     if (resultado) return resultado.trajetos.flatMap((trajeto) => trajeto.pontos)
     const pontos = [origem.posicao, destino.posicao].filter((ponto): ponto is Coordenada => ponto !== null)
@@ -168,7 +180,7 @@ export function BuscarRota() {
         <div className="space-y-6">
           <Cartao>
             <form onSubmit={buscar} noValidate className="space-y-4">
-              {/* Perfil ativo sempre visível (heurística H1) */}
+              {/* perfil ativo sempre visível (heurística H1), com opção de trocar */}
               {perfil && !trocandoPerfil ? (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-marca-50 px-3 py-2">
                   <p className="text-sm text-marca-900">
@@ -213,6 +225,7 @@ export function BuscarRota() {
                 autoComplete="off"
               />
 
+              {/* escolhe se o clique no mapa marca a origem ou o destino */}
               <fieldset>
                 <legend className="text-sm font-medium text-slate-800">Ou toque no mapa para marcar:</legend>
                 <div className="mt-1.5 flex gap-2">
@@ -244,6 +257,7 @@ export function BuscarRota() {
 
           {buscando && <Carregando texto="Calculando a rota mais segura..." />}
 
+          {/* erro da busca + botão de tentar de novo */}
           {erroBusca && (
             <div className="space-y-3">
               <Mensagem tipo="erro">{erroBusca}</Mensagem>
@@ -253,6 +267,7 @@ export function BuscarRota() {
             </div>
           )}
 
+          {/* rotas encontradas, ordenadas pelo índice de acessibilidade */}
           {resultado && (
             <section aria-labelledby="titulo-resultados" className="space-y-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -310,7 +325,7 @@ export function BuscarRota() {
                 })}
               </ul>
 
-              {/* Pontos de atenção da rota selecionada (UC05 / RF08) */}
+              {/* pontos de atenção da rota selecionada (UC05 / RF08) */}
               {rotaSelecionada && (
                 <Cartao>
                   <h3 className="text-base font-semibold text-slate-900">Pontos de atenção desta rota</h3>
@@ -355,6 +370,7 @@ export function BuscarRota() {
           )}
         </div>
 
+        {/* o mapa acompanha a rolagem no desktop */}
         <div className="lg:sticky lg:top-20 lg:self-start">
           <Mapa
             centro={CENTRO_PADRAO}

@@ -1,17 +1,15 @@
 import { PERFIS } from '../data/rotulos'
 import type { PerfilMobilidade } from '../types'
 
+/** props do seletor: o perfil marcado e a função chamada ao escolher */
 interface SeletorPerfilProps {
   valor: PerfilMobilidade | null
   aoEscolher: (perfil: PerfilMobilidade) => void
-  /** Nome do grupo de opções (precisa ser único na página) */
+  /** nome do grupo de opções (tem que ser único na página) */
   nome?: string
 }
 
-/**
- * Escolha do perfil de mobilidade com cartões grandes (tela T1 do projeto).
- * É um grupo de radio buttons de verdade, então funciona com teclado e leitor de tela.
- */
+/** escolha do perfil de mobilidade em cartões grandes (tela T1); por baixo são radio buttons de verdade, então funciona no teclado e no leitor de tela */
 export function SeletorPerfil({ valor, aoEscolher, nome = 'perfil-mobilidade' }: SeletorPerfilProps) {
   return (
     <fieldset>

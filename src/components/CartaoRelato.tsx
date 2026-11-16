@@ -3,7 +3,7 @@ import { formatarData, formatarDistancia, TIPOS } from '../data/rotulos'
 import type { Relato } from '../types'
 import { SeloGravidade, SeloStatus } from './Selos'
 
-/** Cartão resumido de um relato. Usado em "Relatos", "Meus relatos" e no painel. */
+/** cartão resumido de um relato, reaproveitado em "Relatos", "Meus relatos" e no painel */
 export function CartaoRelato({ relato, destaque }: { relato: Relato; destaque?: string }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -34,6 +34,7 @@ export function CartaoRelato({ relato, destaque }: { relato: Relato; destaque?: 
           <dt>Criado em:</dt>
           <dd className="font-medium text-slate-800">{formatarData(relato.dataCriacao)}</dd>
         </div>
+        {/* a distância só vem preenchida quando a busca foi "perto de mim" */}
         {relato.distanciaMetros != null && (
           <div className="flex gap-1">
             <dt>Distância:</dt>
@@ -42,6 +43,7 @@ export function CartaoRelato({ relato, destaque }: { relato: Relato; destaque?: 
         )}
       </dl>
 
+      {/* mostra quantas confirmações faltam pro relato virar "Confirmado" */}
       {relato.status === 'PUBLICADO' && relato.confirmacoesFaltantes > 0 && (
         <p className="mt-3 text-sm font-medium text-marca-800">
           {relato.confirmacoesFaltantes === 1

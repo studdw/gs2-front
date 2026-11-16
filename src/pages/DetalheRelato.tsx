@@ -15,24 +15,29 @@ import { distanciaMetros } from '../services/mapaService'
 import { alterarStatusRelato, buscarRelato, listarValidacoes, removerRelato, validarRelato } from '../services/relatoService'
 import type { Coordenada, Relato, StatusRelato, TipoVoto, Validacao } from '../types'
 
+/** mensagem de retorno (sucesso ou erro) depois de uma ação */
 type Retorno = { tipo: 'sucesso' | 'erro'; texto: string } | null
 
+/** status em que o relato ainda aceita votos */
 const STATUS_ATIVOS: StatusRelato[] = ['PUBLICADO', 'CONFIRMADO', 'EM_OBRA']
 
-/** Votação da comunidade: POST /relatos/{id}/validacoes (UC09 / HU09). */
+/** bloco de votação da comunidade (UC09 / HU09), faz o POST /relatos/{id}/validacoes */
 function Votacao({ relato, validacoes, aoVotar }: { relato: Relato; validacoes: Validacao[]; aoVotar: () => void }) {
   const { usuario } = useAuth()
+  /* usuário, localização e GPS do contexto, mais os estados do comentário, do voto sendo enviado e do retorno */
   const { localizacao, usarGps, buscandoGps, erroGps } = usePreferencias()
   const local = useLocation()
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState<TipoVoto | null>(null)
   const [retorno, setRetorno] = useState<Retorno>(null)
 
+  /* descobre se a pessoa já votou e a que distância ela está do relato */
   const meuVoto = validacoes.find((validacao) => validacao.minha)
   const distancia = localizacao
     ? distanciaMetros(localizacao.posicao, [relato.latitude, relato.longitude])
     : null
 
+  /** envia o voto junto com a posição de quem vota */
   async function votar(voto: TipoVoto) {
     if (!localizacao) return
     setEnviando(voto)
@@ -48,13 +53,14 @@ function Votacao({ relato, validacoes, aoVotar }: { relato: Relato; validacoes: 
       setComentario('')
       aoVotar()
     } catch (erro) {
-      // A API explica o motivo: longe demais, voto repetido, relato próprio...
+      /* a própria API explica o motivo: longe demais, voto repetido, relato próprio... */
       setRetorno({ tipo: 'erro', texto: mensagemDeErro(erro) })
     } finally {
       setEnviando(null)
     }
   }
 
+  /* decide o que mostrar: relato inativo, pedir login, relato próprio, voto já feito ou os botões */
   let conteudo
   if (!STATUS_ATIVOS.includes(relato.status)) {
     conteudo = <p className="text-sm text-slate-600">Este relato não está mais ativo e não recebe novos votos.</p>
@@ -141,14 +147,16 @@ function Votacao({ relato, validacoes, aoVotar }: { relato: Relato; validacoes: 
   )
 }
 
-/** Ações do gestor: PATCH /relatos/{id}/status (HU12 e moderação). */
+/** ações do gestor pra mudar o status do relato (HU12 e moderação), usa o PATCH /relatos/{id}/status */
 function AcoesDoGestor({ relato, aoAlterar }: { relato: Relato; aoAlterar: () => void }) {
+  /* status escolhido, previsão da obra e estado do salvamento */
   const [status, setStatus] = useState<StatusRelato>(relato.status === 'EXPIRADO' ? 'PUBLICADO' : relato.status)
   const [previsao, setPrevisao] = useState(relato.dataPrevisaoObra ?? '')
   const [erroPrevisao, setErroPrevisao] = useState<string>()
   const [salvando, setSalvando] = useState(false)
   const [retorno, setRetorno] = useState<Retorno>(null)
 
+  /** salva o novo status; se for "em obra", a data de previsão é obrigatória */
   async function salvar(evento: FormEvent) {
     evento.preventDefault()
     setRetorno(null)
@@ -169,6 +177,7 @@ function AcoesDoGestor({ relato, aoAlterar }: { relato: Relato; aoAlterar: () =>
     }
   }
 
+  /* status que o gestor pode escolher (expirado é automático, não entra) */
   const opcoes: StatusRelato[] = ['EM_MODERACAO', 'PUBLICADO', 'CONFIRMADO', 'EM_OBRA', 'RESOLVIDO', 'REJEITADO']
 
   return (
@@ -205,8 +214,9 @@ function AcoesDoGestor({ relato, aoAlterar }: { relato: Relato; aoAlterar: () =>
   )
 }
 
-/** Detalhe de um relato: GET /relatos/{id} e GET /relatos/{id}/validacoes. */
+/** página de detalhe do relato, busca o relato e as validações na API */
 export function DetalheRelato() {
+  /* useParams pega o código que vem na URL (/relatos/:codigo) */
   const { codigo } = useParams<{ codigo: string }>()
   const numero = Number(codigo)
   const navegar = useNavigate()
@@ -216,15 +226,17 @@ export function DetalheRelato() {
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false)
   const [erroRemocao, setErroRemocao] = useState<string | null>(null)
 
-  // usuario?.id nas dependências: ao entrar ou sair, busca de novo (muda o que a pessoa pode ver e fazer)
+  /* busca o relato e as validações; o usuario?.id nas dependências faz buscar de novo ao entrar ou sair */
   const relato = useRequisicao((sinal) => buscarRelato(numero, sinal), [numero, usuario?.id])
   const validacoes = useRequisicao((sinal) => listarValidacoes(numero, sinal), [numero, usuario?.id])
 
+  /* posição do relato no formato do mapa */
   const posicaoRelato = useMemo<Coordenada | null>(
     () => (relato.dados ? [relato.dados.latitude, relato.dados.longitude] : null),
     [relato.dados],
   )
 
+  /* marcadores: o "!" do relato e o ponto azul de onde a pessoa está */
   const marcadores = useMemo<MarcadorMapa[]>(() => {
     if (!relato.dados || !posicaoRelato) return []
     const lista: MarcadorMapa[] = [
@@ -242,11 +254,13 @@ export function DetalheRelato() {
     return lista
   }, [relato.dados, posicaoRelato, localizacao])
 
+  /** recarrega relato e validações depois de votar ou mudar o status */
   function recarregarTudo() {
     relato.recarregar()
     validacoes.recarregar()
   }
 
+  /** remove o relato e volta pra "minha conta" */
   async function remover() {
     setRemovendo(true)
     setErroRemocao(null)
@@ -260,6 +274,7 @@ export function DetalheRelato() {
     }
   }
 
+  /* antes de mostrar a página: código inválido, carregando ou erro */
   if (!Number.isInteger(numero) || numero <= 0) {
     return (
       <EstadoVazio titulo="Relato não encontrado" acao={<LinkBotao to="/relatos">Ver todos os relatos</LinkBotao>}>
@@ -296,6 +311,7 @@ export function DetalheRelato() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <Cartao>
+            {/* foto do relato, ou aviso de que não tem foto */}
             {dados.foto ? (
               <img
                 src={dados.foto}
@@ -335,6 +351,7 @@ export function DetalheRelato() {
             </dl>
           </Cartao>
 
+          {/* gestão só pra gestor; a votação aparece pra todo mundo */}
           {usuario?.papel === 'GESTOR' && <AcoesDoGestor key={dados.status} relato={dados} aoAlterar={recarregarTudo} />}
 
           <Votacao relato={dados} validacoes={validacoes.dados ?? []} aoVotar={recarregarTudo} />
@@ -355,7 +372,7 @@ export function DetalheRelato() {
             </p>
           </div>
 
-          {/* Histórico de validações, sem identificar quem votou (RN20/RN22) */}
+          {/* histórico de validações, sem mostrar quem votou (RN20/RN22) */}
           <Cartao>
             <h2 className="text-lg font-semibold text-slate-900">Validações da comunidade</h2>
             {validacoes.carregando && !validacoes.dados && <Carregando texto="Buscando validações..." />}
@@ -379,7 +396,7 @@ export function DetalheRelato() {
             )}
           </Cartao>
 
-          {/* Remoção pelo autor ou pelo gestor: DELETE /relatos/{id} */}
+          {/* remoção, só pro autor ou pro gestor (DELETE /relatos/{id}) */}
           {(dados.meu || usuario?.papel === 'GESTOR') && (
             <Cartao>
               <h2 className="text-lg font-semibold text-slate-900">Remover relato</h2>

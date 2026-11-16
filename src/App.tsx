@@ -17,12 +17,12 @@ import { Painel } from './pages/Painel'
 import { Relatos } from './pages/Relatos'
 import { Sobre } from './pages/Sobre'
 
-/** Todas as rotas da SPA. O Layout (cabeçalho + rodapé) envolve todas as páginas. */
+/** serve para declarar todas as rotas da SPA; o Layout (cabeçalho + rodapé) envolve todas as páginas */
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Páginas institucionais */}
+        {/* páginas institucionais, abertas para qualquer pessoa */}
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/integrantes" element={<Integrantes />} />
@@ -30,7 +30,7 @@ export default function App() {
         <Route path="/faq" element={<Faq />} />
         <Route path="/contato" element={<Contato />} />
 
-        {/* Páginas da solução */}
+        {/* páginas da solução; o "novo relato" passa pela RotaProtegida porque precisa de login */}
         <Route path="/rotas" element={<BuscarRota />} />
         <Route path="/relatos" element={<Relatos />} />
         <Route
@@ -44,7 +44,7 @@ export default function App() {
         <Route path="/relatos/:codigo" element={<DetalheRelato />} />
         <Route path="/painel" element={<Painel />} />
 
-        {/* Conta */}
+        {/* área da conta, a "minha conta" também é protegida */}
         <Route path="/entrar" element={<Entrar />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route
@@ -56,6 +56,7 @@ export default function App() {
           }
         />
 
+        {/* o "*" pega qualquer endereço que não existe e cai na página 404 */}
         <Route path="*" element={<NaoEncontrada />} />
       </Route>
     </Routes>

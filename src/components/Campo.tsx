@@ -1,18 +1,21 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 
+/** visual comum de input, textarea e select */
 const ESTILO_CONTROLE =
   'block w-full min-h-11 rounded-xl border bg-white px-3.5 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-marca-600 focus:outline-none focus:ring-2 focus:ring-marca-200'
 
+/** props que todo campo tem: rótulo, erro, dica e opcional */
 interface PropsComuns {
   rotulo: string
-  /** Mensagem de erro de validação do campo */
+  /** mensagem de erro de validação */
   erro?: string
-  /** Texto de ajuda exibido abaixo do campo */
+  /** textinho de ajuda que fica embaixo do campo */
   dica?: string
-  /** Marca visualmente o campo como opcional */
+  /** coloca o "(opcional)" do lado do rótulo */
   opcional?: boolean
 }
 
+/** moldura que todo campo usa: rótulo em cima, controle no meio e dica ou erro embaixo */
 function Moldura({
   id,
   rotulo,
@@ -41,14 +44,16 @@ function Moldura({
   )
 }
 
+/** liga o campo ao texto de erro/dica pelo aria-describedby, assim o leitor de tela lê tudo junto */
 function descricaoAria(id: string, erro?: string, dica?: string): string | undefined {
   if (erro) return `${id}-erro`
   if (dica) return `${id}-dica`
   return undefined
 }
 
-/** Campo de texto com rótulo, dica e mensagem de erro ligados por aria-describedby. */
+/** campo de texto com rótulo, dica e erro já ligados por acessibilidade */
 export function Campo({ rotulo, erro, dica, opcional, className = '', ...resto }: PropsComuns & InputHTMLAttributes<HTMLInputElement>) {
+  /* useId gera um id único pra ligar o rótulo ao campo (os três campos fazem igual) */
   const id = useId()
   return (
     <Moldura id={id} rotulo={rotulo} erro={erro} dica={dica} opcional={opcional}>
@@ -63,7 +68,7 @@ export function Campo({ rotulo, erro, dica, opcional, className = '', ...resto }
   )
 }
 
-/** Campo de texto longo. */
+/** versão pra texto longo (textarea) */
 export function AreaTexto({
   rotulo,
   erro,
@@ -87,7 +92,7 @@ export function AreaTexto({
   )
 }
 
-/** Lista de opções. */
+/** versão de lista de opções (select) */
 export function Selecao({
   rotulo,
   erro,

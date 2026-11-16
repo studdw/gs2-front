@@ -1,6 +1,6 @@
 import type { Integrante } from '../types'
 
-// Dados da equipe. Preencham "github" e "linkedin" com os links de cada integrante.
+/** dados da equipe que aparecem nas páginas de integrantes */
 export const INTEGRANTES: Integrante[] = [
   {
     rm: '571302',
@@ -48,6 +48,7 @@ export const INTEGRANTES: Integrante[] = [
   },
 ]
 
+/** pega as iniciais (primeiro e último nome) pro avatar */
 export function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/)
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()

@@ -15,15 +15,19 @@ import type { Classificacao, Coordenada, Gravidade, Relato, TipoObstaculo } from
 import { comprimirImagem } from '../utils/imagem'
 import { errosDaApi, temErros, type Erros } from '../utils/validacao'
 
+/** as 3 etapas do formulário e os campos que podem ter erro */
 type Etapa = 1 | 2 | 3
 type CamposRelato = 'posicao' | 'endereco' | 'bairro' | 'descricao' | 'foto' | 'tipo' | 'gravidade'
 
+/** nome de cada etapa no indicador do topo */
 const NOMES_ETAPAS: Record<Etapa, string> = { 1: 'Foto e local', 2: 'Revisão', 3: 'Confirmação' }
 
-/** Reportar problema em 3 etapas (UC06 / HU06 e HU07): foto e local, revisão da sugestão, confirmação. */
+/** página de reportar problema em 3 etapas (UC06 / HU06 e HU07): foto e local, revisão da sugestão e confirmação */
 export function NovoRelato() {
+  /* localização e GPS do contexto de preferências */
   const { localizacao, usarGps, buscandoGps, erroGps } = usePreferencias()
 
+  /* estados da etapa atual e dos dados da etapa 1: foto, posição, endereço, bairro e descrição */
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [foto, setFoto] = useState<string | null>(null)
   const [preparandoFoto, setPreparandoFoto] = useState(false)
@@ -33,6 +37,7 @@ export function NovoRelato() {
   const [descricao, setDescricao] = useState('')
   const [erros, setErros] = useState<Erros<CamposRelato>>({})
 
+  /* estados da sugestão da API, do tipo e gravidade escolhidos e do envio */
   const [classificacao, setClassificacao] = useState<Classificacao | null>(null)
   const [tipo, setTipo] = useState<TipoObstaculo>('CALCADA_IRREGULAR')
   const [gravidade, setGravidade] = useState<Gravidade>('MEDIA')
@@ -41,24 +46,25 @@ export function NovoRelato() {
   const [erroApi, setErroApi] = useState<ApiError | string | null>(null)
   const [criado, setCriado] = useState<Relato | null>(null)
 
-  /** Posiciona o pino e tenta preencher rua e bairro automaticamente. */
+  /** coloca o pino no mapa e tenta preencher rua e bairro sozinho */
   async function definirPosicao(nova: Coordenada) {
     setPosicao(nova)
     setErros((atuais) => ({ ...atuais, posicao: undefined }))
     const local = await buscarEnderecoDoPonto(nova[0], nova[1])
     if (local) {
-      // Só preenche o que a pessoa ainda não digitou
+      /* só preenche o que a pessoa ainda não digitou */
       setEndereco((atual) => atual || local.endereco)
       setBairro((atual) => atual || local.bairro)
     }
   }
 
-  // Quando o GPS responde, coloca o pino na localização atual
+  /* quando o GPS responde, o pino vai pra localização atual */
   const posicaoGps = localizacao?.origem === 'gps' ? localizacao.posicao : null
   useEffect(() => {
     if (posicaoGps) void definirPosicao(posicaoGps)
   }, [posicaoGps])
 
+  /** pega a foto escolhida e comprime antes de guardar */
   async function escolherFoto(evento: ChangeEvent<HTMLInputElement>) {
     const arquivo = evento.target.files?.[0]
     if (!arquivo) return
@@ -74,7 +80,7 @@ export function NovoRelato() {
     }
   }
 
-  /** Etapa 1 -> 2: valida e pede a sugestão automática de tipo e gravidade. */
+  /** etapa 1 pra 2: valida os campos e pede a sugestão automática de tipo e gravidade */
   async function continuar(evento: FormEvent) {
     evento.preventDefault()
     const novos: Erros<CamposRelato> = {}
@@ -100,7 +106,7 @@ export function NovoRelato() {
     }
   }
 
-  /** Etapa 2 -> 3: POST /relatos */
+  /** etapa 2 pra 3: envia o relato pra API (POST /relatos) */
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
     if (!posicao) return
@@ -123,7 +129,7 @@ export function NovoRelato() {
       if (erro instanceof ApiError) {
         setErroApi(erro)
         if (erro.campos.length > 0) {
-          // A API recusou algum campo: volta para a etapa 1 mostrando o erro no campo certo
+          /* a API recusou algum campo, então volta pra etapa 1 mostrando o erro no campo certo */
           setErros(errosDaApi<CamposRelato>(erro.campos))
           setEtapa(1)
         }
@@ -135,8 +141,9 @@ export function NovoRelato() {
     }
   }
 
+  /* texto do erro, venha ele da API ou de outro lugar */
   const textoErroApi = erroApi instanceof ApiError ? erroApi.message : erroApi
-  // 409 com protocolo = ja existe um relato igual perto dali (RF12): oferece o caminho para confirma-lo
+  /* 409 com protocolo = já existe um relato igual ali perto (RF12), então oferecemos o caminho pra confirmar o existente */
   const relatoDuplicado = erroApi instanceof ApiError && erroApi.status === 409 && erroApi.message.includes('protocolo')
 
   return (
@@ -145,7 +152,7 @@ export function NovoRelato() {
         Encontrou um obstáculo na calçada? Conte para a comunidade e para a prefeitura em 3 passos.
       </TituloPagina>
 
-      {/* Indicador de etapas (heurística H1 - visibilidade do status) */}
+      {/* indicador de etapas (heurística H1 - visibilidade do status) */}
       <ol className="mb-6 grid grid-cols-3 gap-2" aria-label="Etapas do relato">
         {([1, 2, 3] as const).map((numero) => (
           <li
@@ -164,6 +171,7 @@ export function NovoRelato() {
         ))}
       </ol>
 
+      {/* etapa 1: foto, local no mapa, endereço e descrição */}
       {etapa === 1 && (
         <Cartao>
           <form onSubmit={continuar} noValidate className="space-y-5">
@@ -259,6 +267,7 @@ export function NovoRelato() {
         </Cartao>
       )}
 
+      {/* etapa 2: a pessoa confere a sugestão automática e corrige se precisar */}
       {etapa === 2 && classificacao && (
         <Cartao>
           <form onSubmit={enviar} noValidate className="space-y-5">
@@ -338,6 +347,7 @@ export function NovoRelato() {
         </Cartao>
       )}
 
+      {/* etapa 3: confirmação com o protocolo e o status */}
       {etapa === 3 && criado && (
         <Cartao className="text-center">
           <span aria-hidden="true" className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">

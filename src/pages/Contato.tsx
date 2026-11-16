@@ -10,8 +10,10 @@ import { enviarContato } from '../services/contatoService'
 import type { AssuntoContato } from '../types'
 import { emailValido, errosDaApi, temErros, type Erros } from '../utils/validacao'
 
+/** e-mail reserva caso o formulário falhe */
 const EMAIL_SUPORTE = 'suporte@rotaparatodos.app'
 
+/** assuntos do select, com o valor que a API espera e o texto da tela */
 const ASSUNTOS: { valor: AssuntoContato; rotulo: string }[] = [
   { valor: 'DUVIDA', rotulo: 'Dúvida sobre o uso' },
   { valor: 'PROBLEMA_SITE', rotulo: 'Problema no site' },
@@ -20,11 +22,14 @@ const ASSUNTOS: { valor: AssuntoContato; rotulo: string }[] = [
   { valor: 'OUTRO', rotulo: 'Outro' },
 ]
 
+/** campos do contato que podem ter erro */
 type CamposContato = 'nome' | 'email' | 'assunto' | 'mensagem'
 
+/** página de contato, a mensagem vai pro banco pela API */
 export function Contato() {
+  /* usuário logado, se tiver */
   const { usuario } = useAuth()
-  // Quem está logado já começa com nome e e-mail preenchidos
+  /* estados do formulário; quem está logado já começa com nome e e-mail preenchidos */
   const [nome, setNome] = useState(usuario?.nome ?? '')
   const [email, setEmail] = useState(usuario?.email ?? '')
   const [assunto, setAssunto] = useState<AssuntoContato | ''>('')
@@ -34,6 +39,7 @@ export function Contato() {
   const [enviando, setEnviando] = useState(false)
   const [protocolo, setProtocolo] = useState<number | null>(null)
 
+  /** confere os campos antes de enviar */
   function validar(): Erros<CamposContato> {
     const novos: Erros<CamposContato> = {}
     if (nome.trim().length < 3) novos.nome = 'Informe o seu nome (pelo menos 3 letras).'
@@ -43,6 +49,7 @@ export function Contato() {
     return novos
   }
 
+  /** envia a mensagem e mostra o número do protocolo quando dá certo */
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
     const novos = validar()
@@ -53,7 +60,7 @@ export function Contato() {
 
     setEnviando(true)
     try {
-      // POST /contatos: a mensagem fica gravada na tabela tb_contato
+      /* aqui é o POST /contatos: a mensagem fica gravada na tabela tb_contato */
       const contato = await enviarContato({
         nome: nome.trim(),
         email: email.trim(),
@@ -122,6 +129,7 @@ export function Contato() {
             required
           />
 
+          {/* avisos de erro e mensagem de sucesso com o protocolo */}
           {temErros(erros) && !erroApi && <Mensagem tipo="erro">Confira os campos destacados e tente de novo.</Mensagem>}
           {erroApi && (
             <Mensagem tipo="erro" titulo="Não foi possível enviar">

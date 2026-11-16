@@ -1,5 +1,6 @@
 import { Cartao, TituloPagina } from '../components/Layout'
 
+/** ODS (Objetivos de Desenvolvimento Sustentável) ligados ao projeto */
 const ODS = [
   { numero: 11, nome: 'Cidades e comunidades sustentáveis', texto: 'Rotas a pé acessíveis e priorização de obras nas calçadas (metas 11.2 e 11.7).' },
   { numero: 10, nome: 'Redução das desigualdades', texto: 'Autonomia para circular, estudar e trabalhar (meta 10.2).' },
@@ -7,6 +8,7 @@ const ODS = [
   { numero: 9, nome: 'Indústria, inovação e infraestrutura', texto: 'Dados para a manutenção da infraestrutura urbana (meta 9.1).' },
 ]
 
+/** tecnologias usadas */
 const TECNOLOGIAS = [
   { nome: 'React + Vite + TypeScript', texto: 'Aplicação de página única (SPA) com componentes reutilizáveis e tipagem.' },
   { nome: 'Tailwind CSS', texto: 'Layout responsivo para celular, tablet e desktop.' },
@@ -15,6 +17,7 @@ const TECNOLOGIAS = [
   { nome: 'OpenStreetMap', texto: 'Mapa, busca de endereços e trajetos a pé (dados abertos).' },
 ]
 
+/** página sobre: problema, solução, como calculamos os índices, ODS e tecnologias */
 export function Sobre() {
   return (
     <div className="space-y-10">
@@ -43,6 +46,7 @@ export function Sobre() {
         </Cartao>
       </div>
 
+      {/* o id "titulo-indices" é o alvo dos links "Como calculamos?" das outras páginas */}
       <section aria-labelledby="titulo-indices">
         <h2 id="titulo-indices" className="text-xl font-bold text-slate-900">
           Como calculamos

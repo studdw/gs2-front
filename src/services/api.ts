@@ -1,14 +1,17 @@
 import type { ErroApi } from '../types'
 
-/** Endereço da API Java. Vem do arquivo .env (VITE_API_URL). */
+/** endereço da API Java, vem do .env (VITE_API_URL) */
 export const API_URL: string = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
 
+/** chave onde o token de login fica salvo no navegador */
 const CHAVE_TOKEN = 'rpt.token'
 
+/** lê o token salvo */
 export function lerToken(): string | null {
   return localStorage.getItem(CHAVE_TOKEN)
 }
 
+/** salva o token, ou apaga quando recebe null (no logout) */
 export function salvarToken(token: string | null): void {
   if (token) {
     localStorage.setItem(CHAVE_TOKEN, token)
@@ -17,10 +20,10 @@ export function salvarToken(token: string | null): void {
   }
 }
 
-/** Erro de uma chamada à API, já com a mensagem pronta para mostrar na tela. */
+/** erro da API com o status HTTP e a mensagem já pronta pra tela */
 export class ApiError extends Error {
   status: number
-  /** Campos inválidos (erro 400 do Bean Validation) */
+  /** campos inválidos que vêm no erro 400 do Bean Validation */
   campos: { campo: string; mensagem: string }[]
 
   constructor(status: number, mensagem: string, campos: { campo: string; mensagem: string }[] = []) {
@@ -31,11 +34,7 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * A API Java devolve dois formatos de erro:
- *  - ErroResponseDto: { "erro": "Not Found", "detalhe": "Relato não encontrado" }
- *  - validação (400): { "email": "Informe um e-mail válido.", "senha": "..." }
- */
+/** transforma a resposta de erro em ApiError; a API devolve dois formatos: o ErroResponseDto { erro, detalhe } e o de validação 400 { campo: mensagem } */
 function criarErro(status: number, corpo: unknown): ApiError {
   if (corpo && typeof corpo === 'object') {
     const erro = corpo as Partial<ErroApi>
@@ -50,16 +49,14 @@ function criarErro(status: number, corpo: unknown): ApiError {
   return new ApiError(status, 'Algo deu errado. Tente de novo em instantes.')
 }
 
+/** opções de uma requisição: método HTTP, corpo e sinal de cancelamento */
 interface OpcoesRequisicao {
   metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   corpo?: unknown
   sinal?: AbortSignal
 }
 
-/**
- * Função única para falar com a API Java usando a Fetch API.
- * Envia o token (se houver), converte o JSON e transforma erros em ApiError.
- */
+/** serve como função única pra falar com a API Java (Fetch API): envia o token se tiver, converte o JSON e transforma erro em ApiError */
 export async function requisitar<T>(caminho: string, opcoes: OpcoesRequisicao = {}): Promise<T> {
   const cabecalhos: Record<string, string> = { Accept: 'application/json' }
   if (opcoes.corpo !== undefined) {
@@ -82,10 +79,11 @@ export async function requisitar<T>(caminho: string, opcoes: OpcoesRequisicao = 
     if (erro instanceof DOMException && erro.name === 'AbortError') {
       throw erro
     }
-    // fetch só rejeita quando não consegue falar com o servidor (API fora do ar, sem internet...)
+    /* o fetch só falha assim quando nem consegue falar com o servidor (API fora do ar, sem internet...) */
     throw new ApiError(0, 'Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo.')
   }
 
+  /* 204 = deu certo mas sem conteúdo (ex.: DELETE), então não tem JSON pra ler */
   if (resposta.status === 204) {
     return undefined as T
   }
@@ -98,7 +96,7 @@ export async function requisitar<T>(caminho: string, opcoes: OpcoesRequisicao = 
   return corpo as T
 }
 
-/** Monta "?a=1&b=2" ignorando valores vazios. */
+/** monta a query string "?a=1&b=2" a partir de um objeto, pulando os valores vazios */
 export function montarConsulta(parametros: object): string {
   const consulta = new URLSearchParams()
   for (const [chave, valor] of Object.entries(parametros)) {
@@ -110,7 +108,7 @@ export function montarConsulta(parametros: object): string {
   return texto ? `?${texto}` : ''
 }
 
-/** Mensagem amigável a partir de qualquer erro capturado em um catch. */
+/** tira uma mensagem amigável de qualquer erro pego num catch */
 export function mensagemDeErro(erro: unknown): string {
   if (erro instanceof ApiError) {
     return erro.message

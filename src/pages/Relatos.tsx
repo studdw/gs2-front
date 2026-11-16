@@ -13,22 +13,24 @@ import { CENTRO_PADRAO } from '../services/mapaService'
 import { listarRelatos } from '../services/relatoService'
 import type { Coordenada, Gravidade, TipoObstaculo } from '../types'
 
+/** raio em metros do modo "perto de mim" */
 const RAIO_PERTO_DE_MIM = 200
 
-/**
- * Mapa e lista de relatos (GET /relatos).
- * No modo "perto de mim", mostra só os relatos ativos a até 200 m para validar (UC09 / RF18).
- */
+/** página com mapa e lista de relatos (GET /relatos); no "perto de mim" mostra só os ativos a até 200 m, pra validar (UC09 / RF18) */
 export function Relatos() {
+  /* navegação pro detalhe, mais localização e GPS do contexto */
   const navegar = useNavigate()
   const { localizacao, usarGps, buscandoGps, erroGps, definirLocalizacaoManual } = usePreferencias()
+  /* se o "perto de mim" está ligado e os filtros de tipo e gravidade */
   const [pertoDeMim, setPertoDeMim] = useState(false)
   const [tipo, setTipo] = useState<TipoObstaculo | ''>('')
   const [gravidade, setGravidade] = useState<Gravidade | ''>('')
 
+  /* só filtra pela posição se o modo estiver ligado e já tiver localização */
   const posicao = localizacao?.posicao
   const filtrarPorPosicao = pertoDeMim && posicao !== undefined
 
+  /* busca os relatos com os filtros; refaz quando um filtro ou a posição muda */
   const { dados, carregando, erro, recarregar } = useRequisicao(
     (sinal) =>
       listarRelatos(
@@ -42,12 +44,13 @@ export function Relatos() {
     [tipo, gravidade, filtrarPorPosicao, posicao?.[0], posicao?.[1]],
   )
 
-  // Fora do modo "perto de mim", a lista mostra o que ainda precisa de atenção
+  /* fora do "perto de mim", só mostra o que ainda precisa de atenção (tira resolvidos, expirados e rejeitados) */
   const relatos = useMemo(
     () => (dados ?? []).filter((relato) => filtrarPorPosicao || !['RESOLVIDO', 'EXPIRADO', 'REJEITADO'].includes(relato.status)),
     [dados, filtrarPorPosicao],
   )
 
+  /* um marcador pra cada relato (clicou, abre o detalhe) e o ponto azul da pessoa */
   const marcadores = useMemo<MarcadorMapa[]>(() => {
     const lista: MarcadorMapa[] = relatos.map((relato) => ({
       id: relato.id,
@@ -63,11 +66,13 @@ export function Relatos() {
     return lista
   }, [relatos, posicao, navegar])
 
+  /* pontos que o mapa precisa enquadrar */
   const enquadrar = useMemo<Coordenada[] | undefined>(() => {
     if (filtrarPorPosicao) return [posicao, ...relatos.map((r): Coordenada => [r.latitude, r.longitude])]
     return relatos.length > 0 ? relatos.map((r): Coordenada => [r.latitude, r.longitude]) : undefined
   }, [relatos, filtrarPorPosicao, posicao])
 
+  /** liga e desliga o "perto de mim", pedindo o GPS se ainda não tiver localização */
   function alternarPertoDeMim() {
     if (!pertoDeMim && !posicao) usarGps()
     setPertoDeMim((ativo) => !ativo)
@@ -109,6 +114,7 @@ export function Relatos() {
         </Botao>
       </div>
 
+      {/* explica o que o "perto de mim" está mostrando, ou avisa que ainda está buscando a localização */}
       {pertoDeMim && (
         <div className="mb-4">
           {posicao ? (
@@ -138,6 +144,7 @@ export function Relatos() {
           />
         </div>
 
+        {/* lista de relatos, com carregando, erro e estado vazio */}
         <div className="lg:order-1">
           {carregando && <Carregando texto="Buscando relatos..." />}
           {erro && <ErroCarregamento mensagem={erro} aoTentarDeNovo={recarregar} />}

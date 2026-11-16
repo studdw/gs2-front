@@ -4,11 +4,13 @@ import { EstadoVazio } from '../components/Feedback'
 import { Cartao } from '../components/Layout'
 import { INTEGRANTES, iniciais } from '../data/integrantes'
 
-/** Página de um integrante. O RM vem do parâmetro da rota (/integrantes/:rm). */
+/** página de um integrante; o RM vem da rota (/integrantes/:rm) */
 export function IntegranteDetalhe() {
+  /* useParams pega o RM da URL e depois achamos o integrante na lista */
   const { rm } = useParams<{ rm: string }>()
   const integrante = INTEGRANTES.find((item) => item.rm === rm)
 
+  /* RM que não existe na equipe cai no "não encontrado" */
   if (!integrante) {
     return (
       <EstadoVazio
@@ -49,6 +51,7 @@ export function IntegranteDetalhe() {
           ))}
         </ul>
 
+        {/* GitHub e LinkedIn só aparecem se estiverem preenchidos */}
         {(integrante.github || integrante.linkedin) && (
           <div className="mt-6 flex flex-wrap gap-3">
             {integrante.github && (

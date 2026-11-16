@@ -8,24 +8,31 @@ import { useAuth } from '../context/AuthContext'
 import { mensagemDeErro } from '../services/api'
 import { emailValido, temErros, type Erros } from '../utils/validacao'
 
+/** campos do login que podem ter erro */
 type CamposLogin = 'email' | 'senha'
 
+/** página de login; depois de entrar, volta pra página que a pessoa queria */
 export function Entrar() {
+  /* login do contexto e navegação */
   const { usuario, entrar } = useAuth()
   const navegar = useNavigate()
   const local = useLocation()
+  /* pra onde voltar depois do login: a página que pediu login ou a "minha conta" */
   const voltarPara = (local.state as { voltarPara?: string } | null)?.voltarPara ?? '/minha-conta'
 
+  /* e-mail, senha, erros e se está enviando */
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erros, setErros] = useState<Erros<CamposLogin>>({})
   const [erroApi, setErroApi] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
+  /* já está logado? então vai direto pro destino */
   if (usuario) {
     return <Navigate to={voltarPara} replace />
   }
 
+  /** valida, faz o login pelo contexto e redireciona */
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
     const novos: Erros<CamposLogin> = {}

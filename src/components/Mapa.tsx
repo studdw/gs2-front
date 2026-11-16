@@ -2,43 +2,43 @@ import L from 'leaflet'
 import { useEffect, useRef } from 'react'
 import type { Coordenada } from '../types'
 
+/** um marcador do mapa: posição, cor, texto e o que acontece ao clicar */
 export interface MarcadorMapa {
   id: string | number
   posicao: Coordenada
-  /** Cor de fundo do marcador (hexadecimal) */
+  /** cor de fundo em hexadecimal */
   cor: string
-  /** Texto curto dentro do marcador (ex.: "A", "B", "!") */
+  /** texto curtinho dentro do marcador (ex.: "A", "B", "!") */
   texto?: string
-  /** Descrição lida por leitores de tela e mostrada ao passar o mouse */
+  /** lido pelo leitor de tela e mostrado ao passar o mouse */
   titulo: string
   aoClicar?: () => void
 }
 
+/** uma linha no mapa, que é o caminho de uma rota */
 export interface LinhaMapa {
   id: string | number
   pontos: Coordenada[]
   cor: string
-  /** Linha em destaque fica mais grossa e por cima das outras */
+  /** linha mais grossa e por cima das outras (rota selecionada) */
   destaque?: boolean
 }
 
+/** tudo o que o componente Mapa recebe */
 interface MapaProps {
   centro: Coordenada
   zoom?: number
   marcadores?: MarcadorMapa[]
   linhas?: LinhaMapa[]
-  /** Quando muda, o mapa se ajusta para mostrar todos estes pontos */
+  /** quando muda, o mapa dá zoom pra mostrar todos esses pontos */
   enquadrar?: Coordenada[]
   aoClicarNoMapa?: (posicao: Coordenada) => void
-  /** Descrição do mapa para leitores de tela */
+  /** descrição do mapa pro leitor de tela */
   descricao: string
   className?: string
 }
 
-/**
- * Mapa interativo (Leaflet + OpenStreetMap).
- * O Leaflet cuida do próprio HTML; o React só informa o que deve ser desenhado.
- */
+/** serve como o mapa interativo do site (Leaflet + OpenStreetMap); o Leaflet cuida do próprio HTML e o React só diz o que desenhar */
 export function Mapa({
   centro,
   zoom = 15,
@@ -49,14 +49,15 @@ export function Mapa({
   descricao,
   className = 'h-80',
 }: MapaProps) {
+  /* useRef guarda a div, o mapa do Leaflet e a camada de desenho sem causar re-render */
   const elemento = useRef<HTMLDivElement>(null)
   const mapa = useRef<L.Map | null>(null)
   const camada = useRef<L.LayerGroup | null>(null)
-  // Guarda sempre a versão mais nova da função de clique, sem recriar o mapa
+  /* guarda sempre a versão mais nova da função de clique, assim não precisa recriar o mapa */
   const cliqueAtual = useRef(aoClicarNoMapa)
   cliqueAtual.current = aoClicarNoMapa
 
-  // Cria o mapa uma única vez
+  /* cria o mapa uma única vez e destrói quando a tela fecha */
   useEffect(() => {
     if (!elemento.current || mapa.current) return
     const novoMapa = L.map(elemento.current, { center: centro, zoom, scrollWheelZoom: false })
@@ -74,22 +75,22 @@ export function Mapa({
       mapa.current = null
       camada.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [])
 
-  // Recentraliza quando o centro muda
+  /* se o centro mudar, o mapa recentraliza */
   useEffect(() => {
     mapa.current?.setView(centro)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [centro[0], centro[1]])
 
-  // Redesenha linhas e marcadores
+  /* hook que redesenha linhas e marcadores sempre que a lista muda */
   useEffect(() => {
     const grupo = camada.current
     if (!grupo) return
     grupo.clearLayers()
 
-    // Linhas comuns primeiro; a de destaque por último, para ficar por cima
+    /* desenha as linhas comuns primeiro e a de destaque por último, pra ela ficar por cima */
     const ordenadas = [...linhas].sort((a, b) => Number(a.destaque ?? false) - Number(b.destaque ?? false))
     for (const linha of ordenadas) {
       L.polyline(linha.pontos, {
@@ -99,6 +100,7 @@ export function Mapa({
       }).addTo(grupo)
     }
 
+    /* cada marcador vira um ícone redondo, que abre com clique ou com Enter no teclado */
     for (const marcador of marcadores) {
       const tamanho = marcador.texto ? 30 : 18
       const icone = L.divIcon({
@@ -122,7 +124,7 @@ export function Mapa({
     }
   }, [marcadores, linhas])
 
-  // Ajusta o zoom para mostrar todos os pontos pedidos
+  /* ajusta o zoom pra caber todos os pontos; a chave em texto evita refazer quando a lista é a mesma */
   const chaveEnquadrar = enquadrar ? JSON.stringify(enquadrar) : ''
   useEffect(() => {
     if (!mapa.current || !enquadrar || enquadrar.length === 0) return
@@ -131,7 +133,7 @@ export function Mapa({
     } else {
       mapa.current.fitBounds(L.latLngBounds(enquadrar), { padding: [32, 32] })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [chaveEnquadrar])
 
   return (

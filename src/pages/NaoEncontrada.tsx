@@ -1,6 +1,7 @@
 import { LinkBotao } from '../components/Botao'
 import { EstadoVazio } from '../components/Feedback'
 
+/** página 404, quando o endereço não existe */
 export function NaoEncontrada() {
   return (
     <EstadoVazio titulo="Página não encontrada" acao={<LinkBotao to="/">Voltar para o início</LinkBotao>}>

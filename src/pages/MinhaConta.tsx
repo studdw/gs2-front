@@ -11,13 +11,16 @@ import { mensagemDeErro } from '../services/api'
 import { atualizarUsuario, listarRelatosDoUsuario } from '../services/usuarioService'
 import type { PerfilMobilidade, Usuario } from '../types'
 
-/** Troca do perfil de mobilidade: PUT /usuarios/{id} (HU02). */
+/** troca o perfil de mobilidade da conta (HU02) pelo PUT /usuarios/{id} */
 function PerfilDeMobilidade({ usuario }: { usuario: Usuario }) {
+  /* função do contexto que atualiza o usuário logado depois de salvar */
   const { atualizarUsuario: atualizarNoContexto } = useAuth()
+  /* perfil escolhido, se está salvando e a mensagem de retorno */
   const [perfil, setPerfil] = useState<PerfilMobilidade | null>(usuario.perfilMobilidade ?? null)
   const [salvando, setSalvando] = useState(false)
   const [retorno, setRetorno] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null)
 
+  /** salva o perfil na API e atualiza o usuário no contexto */
   async function salvar() {
     if (!perfil) return
     setSalvando(true)
@@ -54,8 +57,9 @@ function PerfilDeMobilidade({ usuario }: { usuario: Usuario }) {
   )
 }
 
-/** Lista dos relatos do usuário: GET /usuarios/{id}/relatos (HU08). */
+/** lista os relatos da pessoa (HU08), vem do GET /usuarios/{id}/relatos */
 function MeusRelatos({ usuario }: { usuario: Usuario }) {
+  /* hook que busca os relatos de quem está logado */
   const { dados, carregando, erro, recarregar } = useRequisicao(
     (sinal) => listarRelatosDoUsuario(usuario.id, sinal),
     [usuario.id],
@@ -90,8 +94,11 @@ function MeusRelatos({ usuario }: { usuario: Usuario }) {
   )
 }
 
+/** página "minha conta": perfil de mobilidade e os relatos da pessoa */
 export function MinhaConta() {
+  /* usuário logado vindo do contexto */
   const { usuario } = useAuth()
+  /* a RotaProtegida já garante o login, isso aqui é só uma segurança a mais */
   if (!usuario) return null
 
   return (
@@ -100,6 +107,7 @@ export function MinhaConta() {
         {usuario.email} - {usuario.papel === 'GESTOR' ? 'Gestor público' : 'Cidadão'}
       </TituloPagina>
 
+      {/* aviso pro gestor de onde ficam as ferramentas dele */}
       {usuario.papel === 'GESTOR' && (
         <Mensagem tipo="info" titulo="Você entrou como gestor">
           No <Link to="/painel" className="font-semibold underline">painel</Link> você aprova relatos em moderação e registra o andamento das obras.

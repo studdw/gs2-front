@@ -32,7 +32,8 @@ validar obstáculos nas calçadas e mostrar, em um painel público, onde a obra 
 - GitHub: `https://github.com/studdw/gs2-front`
 - Vercel: `https://gs2-frontend.vercel.app/`
 - API Java (Render): `https://gs2-backend.onrender.com/`
-- Vídeo (YouTube): `https://youtu.be/tC9lkn-sEkE`
+- Vídeo Pitch (YouTube - Geral): `https://youtu.be/tC9lkn-sEkE`
+- Vídeo Explicativo (YouTube - Frontend): `https://youtu.be/GHYt7n-CXTo`
 - Contato: `lucaskaftanp@gmail.com`
 
 ## Como executar
